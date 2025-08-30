@@ -1,0 +1,7 @@
+#ifndef SECRET_HPP
+#define SECRET_HPP
+
+// File that includes all the needed headers
+// users just to <secret/secret.hpp>
+#include "secret_schema.hpp"
+#endif
