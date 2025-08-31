@@ -44,3 +44,54 @@ if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR MODERN_CMAKE_BUILD_TESTING)
   add_subdirectory(tests)
 endif()
 
+find_program(CPPCHECK cppcheck)
+
+if(CPPCHECK)
+    # List of source files for cppcheck (could be entire src dir)
+    file(GLOB_RECURSE CPP_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    )
+
+    set(INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+    )
+
+    set(CPPCHECK_OPTIONS
+        --enable=all
+        --inconclusive
+        --force
+        --std=c++17
+        --inline-suppr
+        --verbose
+        --suppress=missingIncludeSystem
+    )
+
+    add_custom_target(cppcheck
+        COMMAND ${CPPCHECK} ${CPPCHECK_OPTIONS}
+                -I"${INCLUDE_DIRS}"
+                ${CPP_FILES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Running cppcheck..."
+        VERBATIM
+    )
+endif()
+
+find_program(CLANG_TIDY clang-tidy)
+
+if(CLANG_TIDY)
+    file(GLOB_RECURSE CPP_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    )
+
+    set(INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+    )
+
+
+    add_custom_target(clang-tidy
+        COMMAND ${CLANG_TIDY} -p=${CMAKE_BINARY_DIR} ${CPP_FILES} ${INCLUDE_DIRS}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Running clang-tidy on all source files..."
+        VERBATIM
+    )
+endif()

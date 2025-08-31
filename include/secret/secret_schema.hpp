@@ -1,11 +1,12 @@
 #ifndef SECRET_SCHEMA_HPP
 #define SECRET_SCHEMA_HPP
+#include <algorithm>
 #include <cstring>
+#include <stdexcept>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
 extern "C" {
 #include <libsecret-1/libsecret/secret.h>
 }
@@ -30,17 +31,32 @@ public:
   public:
     explicit instance_builder(secret_schema *schema) : m_schema(schema) {}
 
-    instance_builder &set(const std::string &key, const std::string &value) {
+    instance_builder &set(const std::string &key, const char *value) {
+      auto it = std::find_if(m_schema->attributes().begin(),
+                             m_schema->attributes().end(),
+                             [&](const attr &a) { return a.name == key; });
+      if (it == m_schema->attributes().end())
+        throw std::invalid_argument("Unknown key: " + key);
       m_values[key] = value;
       return *this;
     }
-
+    // TODO (samuil) thise set overloads should be refactored
     instance_builder &set(const std::string &key, int value) {
+      auto it = std::find_if(m_schema->attributes().begin(),
+                             m_schema->attributes().end(),
+                             [&](const attr &a) { return a.name == key; });
+      if (it == m_schema->attributes().end())
+        throw std::invalid_argument("Unknown key: " + key);
       m_values[key] = std::to_string(value);
       return *this;
     }
 
     instance_builder &set(const std::string &key, bool value) {
+      auto it = std::find_if(m_schema->attributes().begin(),
+                             m_schema->attributes().end(),
+                             [&](const attr &a) { return a.name == key; });
+      if (it == m_schema->attributes().end())
+        throw std::invalid_argument("Unknown key: " + key);
       m_values[key] = value ? "true" : "false";
       return *this;
     }
@@ -104,6 +120,18 @@ public:
 
   // the user never sees libsecret, but we can still give conversion here
   SecretSchema &to_c_struct() const { return m_schema->to_c_struct(); }
+  std::string get_string(const std::string &key) const {
+    return m_values.at(key);
+  }
+
+  int get_int(const std::string &key) const {
+    return std::stoi(m_values.at(key));
+  }
+
+  bool get_bool(const std::string &key) const {
+    const auto &val = m_values.at(key);
+    return val == "true";
+  }
 
 private:
   secret_schema *m_schema;
