@@ -4,4 +4,5 @@
 // File that includes all the needed headers
 // users just to <secret/secret.hpp>
 #include "secret_schema.hpp"
+#include "secret_service.hpp"
 #endif

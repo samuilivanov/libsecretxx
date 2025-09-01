@@ -3,41 +3,93 @@
 
 #include "secret_schema.hpp"
 #include "secret_value.hpp"
+#include <algorithm>
+#include <optional>
 #include <string>
 #include <unordered_map>
-extern "C" {
-#include <libsecret-1/libsecret/secret.h>
-}
-/*
-secret::service s;
-s.store_secret("org.example.MyApp.Password",
-               {{"username","alice"}, {"hostname","example.com"}},
-               secret::value("mypassword"));*/
 
 namespace secret {
+
+struct secret_ops {
+  int (*secret_password_storev_sync)(const SecretSchema *, GHashTable *,
+                                     const char *, const char *, const char *,
+                                     GCancellable *, GError **);
+
+  char *(*secret_password_lookup_sync)(const SecretSchema *schema,
+                                       GCancellable *cancellable,
+                                       GError **error, ...);
+
+  int (*secret_password_clear_sync)(const SecretSchema *schema,
+                                    GCancellable *cancellable, GError **error,
+                                    ...);
+  void (*secret_password_free)(char *);
+};
+
+static secret_ops default_ops = {
+    ::secret_password_storev_sync, ::secret_password_lookup_sync,
+    ::secret_password_clear_sync, ::secret_password_free};
+
 class secret_service {
-  void store(const base_instance &schema, secret_value &&secret) {
-    auto s = schema.schema();
-    GError *error = NULL;
+public:
+  secret_service(secret_ops ops = default_ops) : m_ops(ops) {}
 
-    /*
-     * The variable argument list is the attributes used to later
-     * lookup the password. These attributes must conform to the schema.
-     */
-    secret_password_store_sync(
-        schema.to_c_struct(), SECRET_COLLECTION_DEFAULT, "The label", "the password",
-        NULL, &error, "number", 9, "string", "nine", "even", FALSE, NULL);
+  std::optional<std::string> store(const base_instance &instance,
+                                   const std::string &label,
+                                   const std::string &password) {
+    GError *error = nullptr;
+    SecretSchema &c_schema = instance.to_c_struct();
 
-    if (error != NULL) {
-      /* ... handle the failure here */
-      g_error_free(error);
-    } else {
-      /* ... do something now that the password has been stored */
+    GHashTable *attrs = g_hash_table_new(g_str_hash, g_str_equal);
+
+    for (const auto &[key, val] : instance.values()) {
+      // Find the attribute type from the schema
+      auto it = std::find_if(instance.schema()->attributes().begin(),
+                             instance.schema()->attributes().end(),
+                             [&](const attr &a) { return a.name == key; });
+      if (it == instance.schema()->attributes().end())
+        continue; // or throw
+
+      switch (it->type) {
+      case attr_type::str_type:
+        g_hash_table_insert(attrs, g_strdup(key.c_str()),
+                            g_strdup(val.c_str()));
+        break;
+      case attr_type::int_type:
+        g_hash_table_insert(attrs, g_strdup(key.c_str()),
+                            GINT_TO_POINTER(std::stoi(val)));
+        break;
+      case attr_type::bool_type:
+        g_hash_table_insert(attrs, g_strdup(key.c_str()),
+                            GINT_TO_POINTER(val == "true" ? 1 : 0));
+        break;
+      }
     }
+
+    gboolean success = m_ops.secret_password_storev_sync(
+        &c_schema,
+        attrs,                     // 2nd argument = GHashTable*
+        SECRET_COLLECTION_DEFAULT, // 3rd = collection
+        label.c_str(),             // 4th = label
+        password.c_str(),          // 5th = password
+        nullptr,                   // 6th = GCancellable*
+        &error                     // 7th = GError**
+    );
+
+    if (!success) {
+      std::string msg = error ? error->message : "unknown error";
+      if (error)
+        g_error_free(error);
+      return msg;
+    }
+    return std::nullopt;
   }
+
   void retrieve(const base_instance &schema);
   void remove(const base_instance &schema);
   bool exists(const base_instance &schema) const;
+
+private:
+  secret_ops m_ops;
 };
 } // namespace secret
 
