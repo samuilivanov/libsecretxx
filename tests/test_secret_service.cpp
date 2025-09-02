@@ -82,7 +82,8 @@ TEST_CASE("Secret service store function") {
 
   secret::secret_service service(mock_succes_ops);
 
-  service.store(*user, "the label", "mypassword");
+  auto result = service.store(*user, "the label", "mypassword");
+  CHECK(result);
 }
 
 TEST_CASE("Store with error handling") {
@@ -101,5 +102,5 @@ TEST_CASE("Store with error handling") {
   secret::secret_service service(mock_fail_ops);
 
   auto result = service.store(*user, "the label", "mypassword");
-  CHECK(result.has_value());
+  CHECK(!result);
 }
