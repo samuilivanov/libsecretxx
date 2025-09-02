@@ -48,20 +48,20 @@ public:
       if (it == instance.schema()->attributes().end())
         continue; // or throw
 
+      std::string val_str;
       switch (it->type) {
       case attr_type::str_type:
-        g_hash_table_insert(attrs.get(), g_strdup(key.c_str()),
-                            g_strdup(val.c_str()));
+        val_str = val;
         break;
       case attr_type::int_type:
-        g_hash_table_insert(attrs.get(), g_strdup(key.c_str()),
-                            GINT_TO_POINTER(std::stoi(val)));
+        val_str = std::to_string(std::stoi(val));
         break;
       case attr_type::bool_type:
-        g_hash_table_insert(attrs.get(), g_strdup(key.c_str()),
-                            GINT_TO_POINTER(val == "true" ? 1 : 0));
+        val_str = (val == "true" ? "1" : "0");
         break;
       }
+      g_hash_table_insert(attrs.get(), g_strdup(key.c_str()),
+                          g_strdup(val_str.c_str()));
     }
 
     gboolean success = m_ops.secret_password_storev_sync(
