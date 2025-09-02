@@ -3,11 +3,11 @@
 
 #include "secret_schema.hpp"
 #include "secret_value.hpp"
+#include "util/g_hash_table.hpp"
 #include <algorithm>
 #include <optional>
 #include <string>
 #include <unordered_map>
-
 namespace secret {
 
 struct secret_ops {
@@ -38,8 +38,7 @@ public:
                                    const std::string &password) {
     GError *error = nullptr;
     SecretSchema &c_schema = instance.to_c_struct();
-
-    GHashTable *attrs = g_hash_table_new(g_str_hash, g_str_equal);
+    util::g_hash_table attrs;
 
     for (const auto &[key, val] : instance.values()) {
       // Find the attribute type from the schema
@@ -51,15 +50,15 @@ public:
 
       switch (it->type) {
       case attr_type::str_type:
-        g_hash_table_insert(attrs, g_strdup(key.c_str()),
+        g_hash_table_insert(attrs.get(), g_strdup(key.c_str()),
                             g_strdup(val.c_str()));
         break;
       case attr_type::int_type:
-        g_hash_table_insert(attrs, g_strdup(key.c_str()),
+        g_hash_table_insert(attrs.get(), g_strdup(key.c_str()),
                             GINT_TO_POINTER(std::stoi(val)));
         break;
       case attr_type::bool_type:
-        g_hash_table_insert(attrs, g_strdup(key.c_str()),
+        g_hash_table_insert(attrs.get(), g_strdup(key.c_str()),
                             GINT_TO_POINTER(val == "true" ? 1 : 0));
         break;
       }
@@ -67,7 +66,7 @@ public:
 
     gboolean success = m_ops.secret_password_storev_sync(
         &c_schema,
-        attrs,                     // 2nd argument = GHashTable*
+        attrs.get(),               // 2nd argument = GHashTable*
         SECRET_COLLECTION_DEFAULT, // 3rd = collection
         label.c_str(),             // 4th = label
         password.c_str(),          // 5th = password
@@ -81,6 +80,7 @@ public:
         g_error_free(error);
       return msg;
     }
+    attrs.release();
     return std::nullopt;
   }
 

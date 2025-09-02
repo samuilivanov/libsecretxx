@@ -1,5 +1,6 @@
 file(GLOB HEADER_LIST CONFIGURE_DEPENDS
-  "${libsecretxx_SOURCE_DIR}/include/secret/*.hpp")
+  "${libsecretxx_SOURCE_DIR}/include/secret/*.hpp"
+  "${libsecretxx_SOURCE_DIR}/include/util/*.hpp")
 
 # Make an automatic library - will be static or dynamic based on user setting
 add_library(secret_core mocklib.cpp secret_schema.cpp ${HEADER_LIST})
