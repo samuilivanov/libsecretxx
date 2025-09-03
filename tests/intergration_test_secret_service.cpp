@@ -26,4 +26,8 @@ TEST_CASE("Integration: store and retrieve secret") {
   auto retrieved = service.retrieve(*user);
 
   CHECK(password == retrieved);
+
+  auto removed = service.remove(*user);
+
+  CHECK(removed);
 }

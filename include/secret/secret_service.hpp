@@ -35,12 +35,11 @@ public:
 
   [[nodiscard]] std::expected<void, std::string>
   store(const base_instance &instance, const std::string &label,
-        const std::string &password);
+        const std::string &password) const;
 
   [[nodiscard]] std::expected<std::string, std::string>
   retrieve(const base_instance &schema) const;
-  void remove(const base_instance &schema);
-  bool exists(const base_instance &schema) const;
+  bool remove(const base_instance &schema) const;
 
 private:
   secret_ops m_ops;
