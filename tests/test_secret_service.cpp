@@ -9,8 +9,6 @@ int success_secret_password_storev_sync(const SecretSchema *, GHashTable *ghash,
                                         const char *, GCancellable *,
                                         GError **) {
   // Just return success
-  if (ghash)
-    g_hash_table_destroy(ghash);
 
   return 1;
 }

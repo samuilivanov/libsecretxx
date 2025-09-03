@@ -1,7 +1,6 @@
 #include "secret/secret_service.hpp"
 
 namespace secret {
-
 [[nodiscard]] std::expected<void, std::string>
 secret_service::store(const base_instance &instance, const std::string &label,
                       const std::string &password) {
@@ -29,8 +28,7 @@ secret_service::store(const base_instance &instance, const std::string &label,
       val_str = (val == "true" ? "1" : "0");
       break;
     }
-    g_hash_table_insert(attrs.get(), g_strdup(key.c_str()),
-                        g_strdup(val_str.c_str()));
+    attrs.insert(key, val_str);
   }
 
   gboolean success = m_ops.secret_password_storev_sync(
@@ -49,7 +47,6 @@ secret_service::store(const base_instance &instance, const std::string &label,
       g_error_free(error);
     return std::unexpected{msg};
   }
-  attrs.release();
   return {};
 }
 } // namespace secret
