@@ -37,7 +37,8 @@ public:
   store(const base_instance &instance, const std::string &label,
         const std::string &password);
 
-  void retrieve(const base_instance &schema);
+  [[nodiscard]] std::expected<std::string, std::string>
+  retrieve(const base_instance &schema) const;
   void remove(const base_instance &schema);
   bool exists(const base_instance &schema) const;
 

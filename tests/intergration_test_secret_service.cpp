@@ -11,10 +11,8 @@ TEST_CASE("Integration: store and retrieve secret") {
                                    {{"number", secret::attr_type::int_type},
                                     {"string", secret::attr_type::str_type}});
 
-  auto user = userSchema.builder()
-                  .set("number", 123)
-                  .set("string", "teststd")
-                  .build();
+  auto user =
+      userSchema.builder().set("number", 123).set("string", "teststd").build();
 
   secret::secret_service service;
 
@@ -25,20 +23,7 @@ TEST_CASE("Integration: store and retrieve secret") {
 
   CHECK(result);
 
-  //   // Lookup it immediately
-  //   GError *error = nullptr;
-  //   gchar *retrieved =
-  //       secret_password_lookup_sync(&user->to_c_struct(), NULL, &error,
-  //       "number",
-  //                                   123, "string", "nine", "even", FALSE,
-  //                                   NULL);
+  auto retrieved = service.retrieve(*user);
 
-  //   REQUIRE(retrieved != nullptr);
-  //   CHECK(password == retrieved);
-
-  //   if (retrieved)
-  //     secret_password_free(retrieved);
-
-  //   if (error)
-  //     g_error_free(error);
+  CHECK(password == retrieved);
 }
