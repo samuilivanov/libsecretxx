@@ -5,4 +5,5 @@
 // users just to <secret/secret.hpp>
 #include "secret_schema.hpp"
 #include "secret_service.hpp"
+#include "secret_value.hpp"
 #endif
