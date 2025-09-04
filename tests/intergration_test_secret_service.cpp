@@ -1,6 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "secret/secret_schema.hpp"
 #include "secret/secret_service.hpp"
+#include "secret/secret_value.hpp"
 #include <doctest/doctest.h>
 #include <string>
 
@@ -16,16 +17,16 @@ TEST_CASE("Integration: store and retrieve secret") {
 
   secret::secret_service service;
 
-  const std::string password = "integration_test_pass";
+  secret::secret_value password{"integration_test_pass"};
 
-  // Store the secret
   auto result = service.store(*user, "the label", password);
 
   CHECK(result);
 
   auto retrieved = service.retrieve(*user);
 
-  CHECK(password == retrieved);
+  CHECK(std::strcmp(password.c_str(), retrieved->c_str()) ==
+        0); // passes if strings are equal
 
   auto removed = service.remove(*user);
 

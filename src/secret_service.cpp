@@ -3,7 +3,7 @@
 namespace secret {
 [[nodiscard]] std::expected<void, std::string>
 secret_service::store(const base_instance &instance, const std::string &label,
-                      const std::string &password) const {
+                      const secret_value &password) const {
   GError *error = nullptr;
   SecretSchema &c_schema = instance.to_c_struct();
   util::g_hash_table attrs;
@@ -50,7 +50,7 @@ secret_service::store(const base_instance &instance, const std::string &label,
   return {};
 }
 
-std::expected<std::string, std::string>
+std::expected<secret_value, std::string>
 secret_service::retrieve(const base_instance &instance) const {
   GError *error = nullptr;
   SecretSchema &c_schema = instance.to_c_struct();
@@ -78,20 +78,16 @@ secret_service::retrieve(const base_instance &instance) const {
     }
     attrs.insert(key, val_str);
   }
-  auto password =
-      secret_password_lookupv_sync(&c_schema, attrs.get(), nullptr, &error);
+  secret_value password{
+      secret_password_lookupv_sync(&c_schema, attrs.get(), nullptr, &error)};
 
   if (error) {
     std::string msg = error ? error->message : "unknown error";
     g_error_free(error);
     return std::unexpected{msg};
-  } else if (password == nullptr) {
-    return {};
   }
 
-  std::string r = password;
-  secret_password_free(password);
-  return {r};
+  return {std::move(password)};
 }
 
 bool secret_service::remove(const base_instance &instance) const {

@@ -35,9 +35,9 @@ public:
 
   [[nodiscard]] std::expected<void, std::string>
   store(const base_instance &instance, const std::string &label,
-        const std::string &password) const;
+        const secret_value &password) const;
 
-  [[nodiscard]] std::expected<std::string, std::string>
+  [[nodiscard]] std::expected<secret_value, std::string>
   retrieve(const base_instance &schema) const;
   bool remove(const base_instance &schema) const;
 
